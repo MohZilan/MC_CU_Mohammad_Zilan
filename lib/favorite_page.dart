@@ -1,30 +1,36 @@
+// favorite_page.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'movie_bloc.dart';
 
 class FavoritePage extends StatelessWidget {
-  final List<Map<String, dynamic>> movies;
-  final void Function(int index) onToggleFavorite;
-
-  const FavoritePage({
-    super.key,
-    required this.movies,
-    required this.onToggleFavorite,
-  });
+  const FavoritePage({super.key}); // Parameter constructor lama dihapus
 
   @override
   Widget build(BuildContext context) {
-    // Filter hanya film yang difavoritkan, simpan index aslinya
-    final List<({int originalIndex, Map<String, dynamic> movie})> favorites = [
-      for (int i = 0; i < movies.length; i++)
-        if (movies[i]['isFavorite'] == true)
-          (originalIndex: i, movie: movies[i]),
-    ];
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text('Favorite'),
       ),
-      body: favorites.isEmpty ? _buildEmptyState(context) : _buildList(context, favorites),
+      // Menangkap state dari MovieBloc
+      body: BlocBuilder<MovieBloc, MovieState>(
+        builder: (context, state) {
+          if (state is MovieLoaded) {
+            // Memfilter film favorit secara dinamis dari State BLoC
+            final List<({int originalIndex, Map<String, dynamic> movie})> favorites = [
+              for (int i = 0; i < state.movies.length; i++)
+                if (state.movies[i]['isFavorite'] == true)
+                  (originalIndex: i, movie: state.movies[i]),
+            ];
+
+            return favorites.isEmpty
+                ? _buildEmptyState(context)
+                : _buildList(context, favorites);
+          }
+          return const Center(child: CircularProgressIndicator());
+        },
+      ),
     );
   }
 
@@ -66,7 +72,7 @@ class FavoritePage extends StatelessWidget {
     );
   }
 
-  // ─── List Film Favorit (tanpa icon favorite) ──────────────────────────────
+  // ─── List Film Favorit (tanpa icon favorite sesuai ketentuan) ──────────────
   Widget _buildList(
       BuildContext context,
       List<({int originalIndex, Map<String, dynamic> movie})> favorites,
@@ -97,11 +103,10 @@ class FavoritePage extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
 
-                // Info — TANPA icon favorite sesuai ketentuan tugas
+                // Info
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -125,8 +130,7 @@ class FavoritePage extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.star,
-                                color: Colors.amber, size: 18),
+                            const Icon(Icons.star, color: Colors.amber, size: 18),
                             const SizedBox(width: 2),
                             Text(
                               movie['rating']!,
